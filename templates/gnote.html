@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block message %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+            <p>{{ messages }}</p>
+        {% endif %}
+
+    {% endwith %}
+{% endblock %}
+    
+{% block description %}
+
+{% if private_data %}
+  private data list<br>
+  {% for data in private_data %}
+    {{ data }}<br>
+  {% endfor %}
+{% endif %}
+
+{% if public_data %}
+  public data list<br>
+  {% for data in public_data %}
+    {{ data }}<br>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

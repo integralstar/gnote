@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block message %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+            <p>{{ messages }}</p>
+        {% endif %}
+
+    {% endwith %}
+{% endblock %}
+
+{% block description %}
+    <form action="/settings" class="d-flex" role="setting" method="POST">
+    <input class="form-control me-2" type="hidden" name="setting" value="">
+    {% if test %}
+        <input type="checkbox" id="test" name="test" value={{test}}>
+    {% endif %}
+    <button class="btn btn-outline-success" type="submit">Save</button>
+    </form>
+{% endblock %}

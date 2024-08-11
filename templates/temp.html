@@ -1,0 +1,14 @@
+          <div class="collapse navbar-collapse" id="user">
+            {% block user %}
+
+                {% if user == "" %}
+                <a href="{{ url_for('login') }}">Login</a>
+                {% else %}
+                <p>
+                    Welcome {{ user }}
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                </p>
+                {% endif %}    
+
+            {% endblock %}
+          </div>

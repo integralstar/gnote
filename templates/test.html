@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block description %}
+
+<div class="container mt-5">
+  <h1 class="mb-4">My Note</h1>
+  <div class="mb-4">
+    <textarea id="editor" class="form-control mb-2" placeholder="여기에 글을 작성하세요..."></textarea>
+    <button onclick="addPost()" class="btn btn-primary">Write</button>
+  </div>
+  <div id="posts"></div>
+</div>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/27.1.0/classic/ckeditor.js"></script>
+    <script>
+        let editorInstance;
+        ClassicEditor
+            .create(document.querySelector('#editor'))
+            .then(editor => {
+                editorInstance = editor;
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+        function fetchPosts() {
+            $.get('/get_personal_data', function(posts) {
+                renderPosts(posts);
+            }).fail(function(xhr, status, error) {
+                console.error('Error fetching posts:', status, error);
+            });
+        }
+
+        function addPost() {
+            const content = editorInstance.getData();
+
+            $.ajax({
+                url: '/save_personal_data',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ content }),
+                success: function(post) {
+                    editorInstance.setData('');
+                    fetchPosts();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error adding post:', status, error);
+                }
+            });
+        }
+
+        function renderPosts(posts) {
+            const postsContainer = $('#posts');
+            postsContainer.empty();
+            console.log('posts', posts);
+            posts.forEach(post => {
+                const postLink = `${window.location.origin}/posts/${post.id}`;
+                const postElement = $(`
+                    <div class="post">
+                        <div>${post.content}</div>
+                        <!--<p>작성시간: ${new Date(post.timestamp).toLocaleString()}</p>-->
+                        <div class="buttons">
+                            <button class="btn btn-warning btn-sm" onclick="editPost('${post.id}', \`${post.content}\`)">Modify</button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePost('${post.id}')">Delete</button>
+                        </div>
+                    </div>
+                `);
+                postsContainer.append(postElement);
+            });
+        }
+
+        function editPost(id, content) {
+            editorInstance.setData(content);
+
+            $('#editor').focus();
+            document.querySelector('#editor').scrollIntoView();
+
+            $('#updatePostBtn').remove(); // Remove previous update button if exists
+            const updateBtn = $('<button id="updatePostBtn" class="btn btn-primary mt-2">Update Post</button>');
+            updateBtn.on('click', function() {
+                const newContent = editorInstance.getData();
+                $.ajax({
+                    url: `/mynote/${id}`,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ content: newContent }),
+                    success: function() {
+                        editorInstance.setData('');
+                        $('#updatePostBtn').remove();
+                        fetchPosts();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error updating post:', status, error);
+                    }
+                });
+            });
+            $('#editor').after(updateBtn);
+        }
+
+        function deletePost(id) {
+            $.ajax({
+                url: `/mynote/${id}`,
+                type: 'DELETE',
+                success: function() {
+                    fetchPosts();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error deleting post:', status, error);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            fetchPosts();
+        });
+    </script>
+
+    {% if private_data %}
+      private data list<br>
+      {% for data in private_data %}
+        {{ data }}<br>
+      {% endfor %}
+    {% endif %}
+
+  {% if public_data %}
+    public data list<br>
+    {% for data in public_data %}
+      {{ data }}<br>
+    {% endfor %}
+  {% endif %}
+
+{% endblock %}

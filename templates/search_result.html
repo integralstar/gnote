@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block description %}
+    <div class="gnote_search" id="search">
+        <form action="/search" class="d-flex" role="search" method="POST">
+        <input class="form-control me-2" type="search" name="search" placeholder="Search" aria-label="Search">
+        <button class="btn btn-outline-success" type="submit">Search</button>
+        </form>
+    </div>
+    <br>
+    <hr>
+    <br>
+    <div id="result">
+        <p><center>search result</center></p>
+        {% if search is not none %}
+          {{ search }}
+        {% endif %}
+    </div>
+{% endblock %}

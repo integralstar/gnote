@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block message %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+            <p>{{ messages }}</p>
+        {% endif %}
+
+    {% endwith %}
+{% endblock %}
+
+{% block description %}
+    <div class="container mt-5">
+        <h1 class="mb-4">View</h1>
+        <div id="post"></div>
+        <a href="index2" class="btn btn-primary mt-3">List</a>
+    </div>
+    <script>
+        function getPostId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function fetchPost(id) {
+            $.get(`/posts/${id}`, function(post) {
+                renderPost(post);
+            }).fail(function(xhr, status, error) {
+                console.error('Error fetching post:', status, error);
+            });
+        }
+
+        function renderPost(post) {
+            const postContainer = $('#post');
+            postContainer.empty();
+            const postElement = $(`
+                <div>
+                    <div>${post.content}</div>
+                    <p>작성자: ${post.author}</p>
+                    <p>작성시간: ${new Date(post.timestamp).toLocaleString()}</p>
+                    <p>해쉬태그: ${post.hashtags.join(', ')}</p>
+                    <p>좋아요: ${post.likes} | 공유: ${post.shares}</p>
+                </div>
+            `);
+            postContainer.append(postElement);
+        }
+
+        $(document).ready(function() {
+            const postId = getPostId();
+            if (postId) {
+                fetchPost(postId);
+            } else {
+                console.error('No post ID found in URL');
+            }
+        });
+    </script>
+{% endblock %}

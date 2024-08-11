@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block description %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Editor</h1>
+        <div class="mb-4">
+            <textarea id="editor" class="form-control mb-2" placeholder="여기에 글을 작성하세요..."></textarea>
+            <input type="text" id="author" class="form-control mb-2" placeholder="작성자">
+            <input type="text" id="hashtags" class="form-control mb-2" placeholder="해쉬태그 (쉼표로 구분)">
+            <button onclick="addPost()" class="btn btn-primary">Write</button>
+        </div>
+        <div id="posts"></div>
+    </div>
+
+    <!-- CKEditor -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/27.1.0/classic/ckeditor.js"></script>
+    <script>
+        let editorInstance;
+        ClassicEditor
+            .create(document.querySelector('#editor'))
+            .then(editor => {
+                editorInstance = editor;
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+        function fetchPosts() {
+            $.get('/posts', function(posts) {
+                renderPosts(posts);
+            }).fail(function(xhr, status, error) {
+                console.error('Error fetching posts:', status, error);
+            });
+        }
+
+        function addPost() {
+            const content = editorInstance.getData();
+            const author = $('#author').val();
+            const hashtags = $('#hashtags').val().split(',').map(tag => tag.trim());
+
+            $.ajax({
+                url: '/posts',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ content, author, hashtags }),
+                success: function(post) {
+                    editorInstance.setData('');
+                    $('#author').val('');
+                    $('#hashtags').val('');
+                    fetchPosts();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error adding post:', status, error);
+                }
+            });
+        }
+
+        function renderPosts(posts) {
+            const postsContainer = $('#posts');
+            postsContainer.empty();
+            posts.forEach(post => {
+                const postLink = `${window.location.origin}/posts/${post.id}`;
+                const postElement = $(`
+                    <div class="post">
+                        <div>${post.content}</div>
+                        <p>작성자: ${post.author}</p>
+                        <p>작성시간: ${new Date(post.timestamp).toLocaleString()}</p>
+                        <p>해쉬태그: ${post.hashtags.join(', ')}</p>
+                        <p>좋아요: ${post.likes} | 공유: ${post.shares}</p>
+                        <div class="buttons">
+                            <button class="btn btn-success btn-sm" onclick="likePost('${post.id}')">Like</button>
+                            <button class="btn btn-info btn-sm" onclick="sharePost('${post.id}');copyToClipboard('${postLink}');">Share</button>
+                            <button class="btn btn-warning btn-sm" onclick="editPost('${post.id}', \`${post.content}\`)">Modify</button>
+                            <button class="btn btn-danger btn-sm" onclick="deletePost('${post.id}')">Delete</button>
+                        </div>
+                    </div>
+                `);
+                postsContainer.append(postElement);
+            });
+        }
+
+        function likePost(id) {
+            $.post(`/posts/${id}/like`, function() {
+                fetchPosts();
+            }).fail(function(xhr, status, error) {
+                console.error('Error liking post:', status, error);
+            });
+        }
+
+        function sharePost(id) {
+            $.post(`/posts/${id}/share`, function() {
+                fetchPosts();
+            }).fail(function(xhr, status, error) {
+                console.error('Error sharing post:', status, error);
+            });
+        }
+
+        function editPost(id, content) {
+            editorInstance.setData(content);
+            $('#author').val(''); // Clear author field
+            $('#hashtags').val(''); // Clear hashtags field
+
+            $('#editor').focus();
+            document.querySelector('#editor').scrollIntoView();
+
+            $('#updatePostBtn').remove(); // Remove previous update button if exists
+            const updateBtn = $('<button id="updatePostBtn" class="btn btn-primary mt-2">Update Post</button>');
+            updateBtn.on('click', function() {
+                const newContent = editorInstance.getData();
+                $.ajax({
+                    url: `/posts/${id}`,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ content: newContent }),
+                    success: function() {
+                        editorInstance.setData('');
+                        $('#updatePostBtn').remove();
+                        fetchPosts();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error updating post:', status, error);
+                    }
+                });
+            });
+            $('#editor').after(updateBtn);
+        }
+
+        function deletePost(id) {
+            $.ajax({
+                url: `/posts/${id}`,
+                type: 'DELETE',
+                success: function() {
+                    fetchPosts();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error deleting post:', status, error);
+                }
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('링크가 클립보드에 복사되었습니다: \n' + text);
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
+        $(document).ready(function() {
+            fetchPosts();
+        });
+    </script>
+{% endblock %}
