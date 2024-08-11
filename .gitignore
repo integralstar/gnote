@@ -3,4 +3,5 @@ auth/*
 gnote-8e4ef-default-rtdb-export.json
 .venv/*
 __pycache__/*
+flask_session
 flask_session/*

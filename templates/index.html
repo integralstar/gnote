@@ -1,18 +1,20 @@
 {% extends "base.html" %}
 
 {% block description %}
+<br><br>
+<center>
   <main>
     <form>
       <div class="prompt-box">
         <label>
-          <input name="prompt" placeholder="GSearch" type="text" value="">
+          <input class="form-control me-2" name="prompt" placeholder="GSearch" type="search" value="">
         </label>
-        <button type="submit">Make a search!</button>
+        <button class="btn btn-outline-success" type="submit">Make a search!</button>
       </div>
     </form>
     <p class="output"></p>
   </main>
-
+</center>
 <script src="https://unpkg.com/markdown-it@8.4.2/dist/markdown-it.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/markdown@0.5.0/lib/markdown.min.js"></script>
 <script type="module" src="{{url_for('static',filename='js/main.js')}}"></script>
